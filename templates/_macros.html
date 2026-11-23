@@ -1,0 +1,39 @@
+{# Simple SVG product drawings so the project needs no image files. #}
+{% macro product_image(image, size=300) -%}
+{% set c = image.color or '#3b3f45' %}
+{% if image.kind == 'speaker' %}
+<svg viewBox="0 0 200 200" width="{{ size }}" height="{{ size }}" role="img" aria-label="product image">
+  <ellipse cx="100" cy="150" rx="78" ry="16" fill="#000" opacity=".08"/>
+  <path d="M25 95 v40 a75 22 0 0 0 150 0 v-40 z" fill="{{ c }}"/>
+  <path d="M25 105 a75 22 0 0 0 150 0" fill="none" stroke="#000" stroke-opacity=".08" stroke-width="2"/>
+  <ellipse cx="100" cy="95" rx="75" ry="22" fill="#26292d"/>
+  <ellipse cx="100" cy="95" rx="70" ry="19" fill="none" stroke="#2fc5f5" stroke-width="3" opacity=".9"/>
+  <circle cx="72" cy="92" r="4" fill="#444"/><circle cx="128" cy="92" r="4" fill="#444"/>
+  <circle cx="100" cy="84" r="4" fill="#444"/><circle cx="100" cy="102" r="4" fill="#444"/>
+</svg>
+{% elif image.kind == 'reader' %}
+<svg viewBox="0 0 200 200" width="{{ size }}" height="{{ size }}" role="img" aria-label="product image">
+  <rect x="52" y="14" width="96" height="172" rx="10" fill="{{ c }}"/>
+  <rect x="60" y="26" width="80" height="136" rx="2" fill="#eceae4"/>
+  {% for y in range(40, 150, 10) %}<rect x="68" y="{{ y }}" width="{{ 64 if loop.index % 4 else 40 }}" height="3" fill="#9a9a9a"/>{% endfor %}
+  <text x="100" y="178" font-size="8" fill="#888" text-anchor="middle" font-family="Arial">kindle</text>
+</svg>
+{% elif image.kind == 'stick' %}
+<svg viewBox="0 0 200 200" width="{{ size }}" height="{{ size }}" role="img" aria-label="product image">
+  <rect x="30" y="40" width="80" height="26" rx="6" fill="{{ c }}"/>
+  <rect x="110" y="47" width="18" height="12" fill="#999"/>
+  <rect x="120" y="70" width="40" height="120" rx="18" fill="{{ c }}"/>
+  <circle cx="140" cy="100" r="13" fill="#555"/><circle cx="140" cy="100" r="6" fill="{{ c }}"/>
+  <circle cx="130" cy="130" r="4" fill="#666"/><circle cx="150" cy="130" r="4" fill="#666"/>
+  <circle cx="140" cy="88" r="3" fill="#2fc5f5"/>
+</svg>
+{% else %}
+<svg viewBox="0 0 200 200" width="{{ size }}" height="{{ size }}"><rect x="40" y="40" width="120" height="120" fill="{{ c }}"/></svg>
+{% endif %}
+{%- endmacro %}
+
+{% macro stars(rating, count=None) -%}
+<span class="stars" title="{{ rating }} out of 5 stars">
+  {% for i in range(5) %}{% if rating >= i + 1 %}★{% elif rating >= i + 0.5 %}⯪{% else %}☆{% endif %}{% endfor %}
+</span>{% if count is not none %} <span class="link">{{ "{:,}".format(count) }} ratings</span>{% endif %}
+{%- endmacro %}

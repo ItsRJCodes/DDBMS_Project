@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% from "_macros.html" import product_image, stars %}
+{% block title %}Home{% endblock %}
+{% block content %}
+<div class="hero">
+  <h1>Smart devices, delivered fast</h1>
+  <p>Every card below is an <b>Item</b> row fetched from DynamoDB with a single <code>Query</code> on the <code>EntityIndex</code> GSI.</p>
+</div>
+{% if q %}<p class="results-for">Results for <b>"{{ q }}"</b> — {{ items|length }} found</p>{% endif %}
+<div class="grid">
+  {% for it in items %}
+  <a class="card" href="{{ url_for('product', asin=it.asin) }}">
+    <div class="card-img">{{ product_image(it.image, 180) }}</div>
+    <div class="card-title">{{ it.title }}</div>
+    <div>{{ stars(it.rating, it.rating_count) }}</div>
+    <div class="price-sm">{% if it.from_price %}<span class="muted">from</span> {{ it.from_price|money }}{% else %}<span class="muted">Currently unavailable</span>{% endif %}</div>
+    <div class="prime">&#10003;prime</div>
+  </a>
+  {% else %}
+  <p>No items found. Did you run <code>python seed_data.py</code>?</p>
+  {% endfor %}
+</div>
+{% endblock %}

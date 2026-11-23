@@ -1,0 +1,127 @@
+{% extends "base.html" %}
+{% from "_macros.html" import product_image, stars %}
+{% block title %}{{ item.title }}{% endblock %}
+{% block content %}
+<div class="crumbs"><a href="{{ url_for('home') }}">Electronics</a> › {{ item.category }}</div>
+
+<div class="dp">
+  <!-- ================= IMAGE ================= -->
+  <section class="dp-images">
+    <div class="thumbs">
+      {% for i in range(4) %}<div class="thumb {{ 'active' if loop.first }}">{{ product_image(item.image, 40) }}</div>{% endfor %}
+    </div>
+    <div class="main-img">{{ product_image(item.image, 340) }}<p class="muted small">Roll over image to zoom in</p></div>
+  </section>
+
+  <!-- ================= CENTER: ITEM + RELATIONSHIPS ================= -->
+  <section class="dp-center">
+    <div class="tag tag-item">ITEM · sk=METADATA</div>
+    <h1 class="dp-title">{{ item.title }}{% if item.variant_label %} – {{ item.variant_label }}{% endif %}</h1>
+    <a class="link">Visit the {{ item.brand }} Store</a>
+    <div class="rating-row">{{ item.rating }} {{ stars(item.rating, item.rating_count) }}</div>
+    {% if item.badge %}<span class="badge">{{ item.badge }}</span>{% endif %}
+    <hr>
+
+    {% if buy_box %}
+    <div class="tag tag-offer">OFFER · lowest in-stock price</div>
+    <div class="price-block">
+      {% if buy_box.list_price and buy_box.list_price > buy_box.price %}
+        <span class="discount">-{{ ((1 - buy_box.price / buy_box.list_price) * 100)|round|int }}%</span>
+      {% endif %}
+      <span class="price">{{ buy_box.price|money }}</span>
+    </div>
+    {% if buy_box.list_price and buy_box.list_price > buy_box.price %}
+      <div class="muted small">M.R.P.: <s>{{ buy_box.list_price|money }}</s></div>
+    {% endif %}
+    <div class="small">Inclusive of all taxes · <b>FREE delivery</b> {{ buy_box.delivery }}</div>
+    {% else %}
+    <div class="price-block"><span class="unavailable">Currently unavailable.</span></div>
+    {% endif %}
+    <hr>
+
+    {% if variant_dims %}
+    <div class="tag tag-rel">RELATIONSHIPS · sk=VARIANT#…</div>
+    {% for dim in variant_dims %}
+      <div class="variant-dim">
+        <div><span class="muted">{{ dim.name }}:</span> <b>{{ dim.current }}</b></div>
+        <div class="variant-options">
+          {% for opt in dim.options %}
+            <a href="{{ url_for('product', asin=opt.asin) }}"
+               class="variant {{ 'selected' if opt.selected }} {{ 'swatch' if opt.swatch }} {{ '' if opt.exact else 'inexact' }}"
+               title="{{ opt.value }}">
+              {% if opt.swatch %}<span style="background: {{ opt.swatch }}"></span>{% else %}{{ opt.value }}{% endif %}
+            </a>
+          {% endfor %}
+        </div>
+      </div>
+    {% endfor %}
+    <hr>
+    {% endif %}
+
+    <table class="specs">
+      {% for k, v in item.details.items() %}<tr><th>{{ k }}</th><td>{{ v }}</td></tr>{% endfor %}
+    </table>
+    <hr>
+    <h3>About this item</h3>
+    <ul class="bullets">{% for b in item.bullets %}<li>{{ b }}</li>{% endfor %}</ul>
+  </section>
+
+  <!-- ================= BUY BOX: OFFERS ================= -->
+  <aside class="buybox">
+    {% if buy_box %}
+    <form method="post" action="{{ url_for('cart_add') }}">
+      <input type="hidden" name="asin" value="{{ item.asin }}">
+      <input type="hidden" name="seller_id" value="{{ buy_box.seller_id }}">
+      <div class="price">{{ buy_box.price|money }}</div>
+      <div class="small"><b>FREE delivery</b> {{ buy_box.delivery }}</div>
+      <div class="small link">&#128205; Deliver to NIT Delhi 110036</div>
+      <div class="{{ 'instock' if buy_box.stock > 10 else 'lowstock' }}">
+        {% if buy_box.stock > 10 %}In stock{% else %}Only {{ buy_box.stock }} left in stock.{% endif %}
+      </div>
+      <table class="small seller-tbl">
+        <tr><th>Ships from</th><td>{{ buy_box.ships_from }}</td></tr>
+        <tr><th>Sold by</th><td class="link">{{ buy_box.seller_name }}</td></tr>
+      </table>
+      <label class="qty">Quantity:
+        <select name="qty">{% for n in range(1, [buy_box.stock|int, 10]|min + 1) %}<option>{{ n }}</option>{% endfor %}</select>
+      </label>
+      <button class="btn btn-cart">Add to Cart</button>
+      <button class="btn btn-buy" name="buy_now" value="1">Buy Now</button>
+      <div class="small muted secure">&#128274; Secure transaction</div>
+    </form>
+    {% endif %}
+
+    {% if offers|length > 1 %}
+    <div class="other-sellers">
+      <h4>Other sellers on Amazon</h4>
+      {% for o in offers if o is not sameas buy_box %}
+      <form method="post" action="{{ url_for('cart_add') }}" class="other-offer">
+        <input type="hidden" name="asin" value="{{ item.asin }}">
+        <input type="hidden" name="seller_id" value="{{ o.seller_id }}">
+        <div><b>{{ o.price|money }}</b> <span class="small muted">{{ o.condition }}</span></div>
+        <div class="small">Sold by: <span class="link">{{ o.seller_name }}</span></div>
+        {% if o.stock > 0 %}<button class="btn btn-sm">Add to Cart</button>{% else %}<div class="small unavailable">Out of stock</div>{% endif %}
+      </form>
+      {% endfor %}
+    </div>
+    {% endif %}
+  </aside>
+</div>
+
+<section class="description">
+  <h2>Product description</h2>
+  <p>{{ item.description }}</p>
+</section>
+
+<details class="debug">
+  <summary>How this page was loaded from DynamoDB</summary>
+  <p>One <code>Query</code> on table <code>{{ table_name }}</code> with
+     <code>KeyConditionExpression: {{ debug.key_condition }}</code> returned
+     <b>{{ debug.row_count }}</b> rows{% if debug.consumed_capacity is not none %}, consuming
+     <b>{{ debug.consumed_capacity }}</b> read capacity units{% endif %}.</p>
+  <table class="specs">
+    <tr><th>pk</th><th>sk</th><th>entity</th></tr>
+    {% for r in debug.rows %}<tr><td><code>{{ r.pk }}</code></td><td><code>{{ r.sk }}</code></td><td>{{ r.entity }}</td></tr>{% endfor %}
+  </table>
+</details>
+{% endblock %}

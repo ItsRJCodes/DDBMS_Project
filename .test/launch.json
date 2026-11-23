@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "flask-local-ddb",
+      "runtimeExecutable": "/usr/bin/env",
+      "runtimeArgs": ["AWS_ACCESS_KEY_ID=x", "AWS_SECRET_ACCESS_KEY=x", "DDB_ENDPOINT=http://127.0.0.1:8765", ".venv/bin/python", "app.py"],
+      "port": 8080
+    }
+  ]
+}

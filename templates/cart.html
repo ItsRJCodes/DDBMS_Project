@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% from "_macros.html" import product_image %}
+{% block title %}Shopping Cart{% endblock %}
+{% block content %}
+<div class="cart-layout">
+  <section class="cart-main">
+    <h1>Shopping Cart</h1>
+    {% if not lines %}
+      <p>Your Amazon Cart is empty. <a class="link" href="{{ url_for('home') }}">Continue shopping</a></p>
+    {% else %}
+    <div class="muted small right">Price</div>
+    {% for l in lines %}
+    <div class="cart-line">
+      <a href="{{ url_for('product', asin=l.asin) }}">{{ product_image(l.image, 120) }}</a>
+      <div class="cart-info">
+        <a class="cart-title" href="{{ url_for('product', asin=l.asin) }}">{{ l.title }}</a>
+        {% if l.variant_label %}<div class="small"><b>Variant:</b> {{ l.variant_label }}</div>{% endif %}
+        <div class="small">Sold by {{ l.seller_name }}</div>
+        <div class="instock small">In stock</div>
+        <form method="post" action="{{ url_for('cart_update') }}" class="cart-actions">
+          <input type="hidden" name="asin" value="{{ l.asin }}">
+          <input type="hidden" name="seller_id" value="{{ l.seller_id }}">
+          <select name="qty" onchange="this.form.submit()" aria-label="Quantity">
+            {% for n in range(1, 11) %}<option {{ 'selected' if n == l.qty }}>{{ n }}</option>{% endfor %}
+          </select>
+          <button class="linkbtn" name="delete" value="1">Delete</button>
+        </form>
+      </div>
+      <div class="cart-price">{{ l.price|money }}</div>
+    </div>
+    {% endfor %}
+    <div class="right subtotal">Subtotal ({{ count }} item{{ 's' if count != 1 }}): <b>{{ subtotal|money }}</b></div>
+    {% endif %}
+  </section>
+  {% if lines %}
+  <aside class="cart-side">
+    <div class="small instock">&#10004; Your order is eligible for FREE Delivery.</div>
+    <div class="subtotal">Subtotal ({{ count }} item{{ 's' if count != 1 }}): <b>{{ subtotal|money }}</b></div>
+    <button class="btn btn-cart" disabled title="Checkout is out of scope for this demo">Proceed to Buy</button>
+    <p class="small muted">Cart rows live in DynamoDB under <code>pk = CART#&lt;your-session-id&gt;</code>.</p>
+  </aside>
+  {% endif %}
+</div>
+{% endblock %}

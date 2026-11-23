@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Amazon Clone{% endblock %} · DynamoDB demo</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+<header class="nav">
+  <a class="logo" href="{{ url_for('home') }}">amazon<span class="smile"></span><small>.clone</small></a>
+  <div class="deliver"><span class="muted">Deliver to</span><b>NIT Delhi 110036</b></div>
+  <form class="search" action="{{ url_for('home') }}">
+    <select aria-label="Category"><option>All</option><option>Electronics</option></select>
+    <input name="q" value="{{ q or '' }}" placeholder="Search Amazon.clone" aria-label="Search">
+    <button aria-label="Search">&#128269;</button>
+  </form>
+  <a class="navlink" href="{{ url_for('seller') }}"><span class="muted">Hello, Seller</span><b>Seller Central</b></a>
+  <a class="navlink cart-link" href="{{ url_for('cart') }}">
+    <span class="cart-count">{{ cart_count }}</span><b>&#128722; Cart</b>
+  </a>
+</header>
+<nav class="subnav">
+  <a href="{{ url_for('home') }}">&#9776; All</a><a>Today's Deals</a><a>Customer Service</a>
+  <a>Registry</a><a>Gift Cards</a><a href="{{ url_for('seller') }}">Sell</a>
+  <span class="db-badge">DynamoDB · {{ table_name }} · {{ region }}</span>
+</nav>
+
+<main class="page">
+  {% with msgs = get_flashed_messages(with_categories=true) %}
+    {% for cat, m in msgs %}<div class="flash {{ cat }}">{{ m }}</div>{% endfor %}
+  {% endwith %}
+  {% block content %}{% endblock %}
+</main>
+
+<footer class="footer">
+  <a href="#top">Back to top</a>
+  <p>Academic project — UI modeled on the Amazon product detail page, data stored in Amazon DynamoDB.</p>
+</footer>
+</body>
+</html>
