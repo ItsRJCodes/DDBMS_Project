@@ -4,3 +4,4 @@ python-dotenv>=1.0
 # for offline tests only
 moto[dynamodb]>=5.0
 pytest>=8.0
+gunicorn>=22.0
