@@ -160,3 +160,93 @@ Set `DDB_ENDPOINT=http://localhost:8000` in `.env` and repeat Steps 4–6. Dummy
 would join `items`, `offers`, `sellers` and `variants`. Here the access pattern ("show the page for
 ASIN X") was designed first, and every row that pattern needs shares a partition key. Reads are a
 single-partition `Query` with predictable latency at any scale, and there are no joins to tune.
+
+## Deployment
+
+The application is deployed using **Render** as the web hosting platform and **Amazon DynamoDB (AWS)** as the cloud database.
+
+### Live Application
+
+**Website:** https://ddbms-project.onrender.com
+
+### Deployment Architecture
+
+- **Frontend:** HTML, CSS, Jinja2 Templates
+- **Backend:** Python, Flask
+- **Application Server:** Gunicorn
+- **Database:** Amazon DynamoDB
+- **Cloud Hosting:** Render
+- **Source Code Management:** GitHub
+
+### Deployment Configuration
+
+The application is deployed on Render using the following configuration:
+
+| Configuration | Value |
+|---|---|
+| Hosting Platform | Render |
+| Repository | `ItsRJCodes/DDBMS_Project` |
+| Branch | `main` |
+| Runtime | Python 3 |
+| Build Command | `pip install -r requirements.txt` |
+| Start Command | `gunicorn --bind 0.0.0.0:$PORT app:app` |
+| AWS Region | `ap-south-1` (Mumbai) |
+| DynamoDB Table | `ItemsAndOffers` |
+
+### Environment Variables
+
+The following environment variables are configured in the Render dashboard:
+
+| Variable | Description |
+|---|---|
+| `AWS_REGION` | AWS deployment region (`ap-south-1`) |
+| `DDB_TABLE` | DynamoDB table name (`ItemsAndOffers`) |
+| `DDB_ENDPOINT` | Empty for AWS cloud DynamoDB |
+| `FLASK_SECRET_KEY` | Flask session security key |
+| `AWS_ACCESS_KEY_ID` | AWS IAM access key |
+| `AWS_SECRET_ACCESS_KEY` | AWS IAM secret access key |
+
+**Security Note:** AWS credentials and application secrets are configured as environment variables in Render and are not stored in the GitHub repository.
+
+### Deployment Steps
+
+1. Push the application source code to the GitHub repository.
+2. Connect the GitHub repository to Render.
+3. Create a new Render Web Service.
+4. Configure the Python runtime, build command and Gunicorn start command.
+5. Add the required environment variables in Render.
+6. Deploy the application.
+7. Verify that the Flask application connects successfully to Amazon DynamoDB.
+
+### Continuous Deployment
+
+The Render service is connected to the GitHub repository. When updated code is pushed to the configured `main` branch, Render can automatically trigger a new deployment.
+
+To update the deployed application:
+
+```bash
+git add .
+git commit -m "Update application"
+git push origin main
+```
+
+Render automatically builds and deploys the latest committed version.
+
+### Production Database
+
+The deployed application uses Amazon DynamoDB in the AWS Mumbai region.
+
+The `ItemsAndOffers` table stores product metadata, seller offers, variant relationships and shopping cart records using a single-table design.
+
+The application uses DynamoDB operations including:
+
+- `Query` – Retrieve product information, offers and relationships.
+- `UpdateItem` – Update seller prices, stock and cart quantities.
+- `DeleteItem` – Remove shopping cart entries.
+- `BatchWriteItem` – Load sample product data.
+
+### Deployment Status
+
+The application has been successfully deployed on Render and is accessible through its public URL.
+
+**Live URL:** https://ddbms-project.onrender.com
