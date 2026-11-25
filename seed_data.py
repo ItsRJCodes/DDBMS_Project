@@ -18,9 +18,9 @@ load_dotenv()
 import db  # noqa: E402
 
 SELLERS = {
-    "AMZN": {"seller_name": "Amazon.clone", "ships_from": "Amazon.clone", "delivery": "Tomorrow", "condition": "New"},
-    "TECHD": {"seller_name": "TechDeals India", "ships_from": "Amazon.clone", "delivery": "in 2 days", "condition": "New"},
-    "GADG": {"seller_name": "GadgetHub Retail", "ships_from": "GadgetHub Retail", "delivery": "in 4-5 days", "condition": "New"},
+    "RISH": {"seller_name": "Rishabh Jain", "ships_from": "NIT Products", "delivery": "Tomorrow", "condition": "New"},
+    "RUCHI": {"seller_name": "Ruchika Jamba", "ships_from": "NIT Delhi", "delivery": "in 2 days", "condition": "New"},
+    "RITIK": {"seller_name": "Ritik Mandle", "ships_from": "NIT Retails", "delivery": "in 4-5 days", "condition": "New"},
     "RENEW": {"seller_name": "Renewed Store", "ships_from": "Renewed Store", "delivery": "in 3 days", "condition": "Renewed"},
 }
 
@@ -89,7 +89,7 @@ FAMILIES = [
 ]
 
 # seller id -> price delta relative to the variant's base price (None = this seller has no offer)
-SELLER_PRICING = [("AMZN", 0, 120), ("TECHD", -150, 6), ("GADG", 300, 25), ("RENEW", -900, 0)]
+SELLER_PRICING = [("RISH", 0, 120), ("RUCHI", -150, 6), ("RITIK", 300, 25), ("RENEW", -900, 0)]
 
 
 def build_rows():

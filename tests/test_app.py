@@ -34,7 +34,7 @@ def test_product_page_loads_item_offers_relationships_in_one_query(client):
     page = db.get_item_page("B0ECHO0001")
     assert page["item"]["variant_attrs"] == {"Color": "Charcoal", "Configuration": "Echo Dot"}
     assert len(page["offers"]) == 4
-    assert page["buy_box"]["seller_id"] == "TECHD"  # cheapest in-stock offer
+    assert page["buy_box"]["seller_id"] == "RUCHI"  # cheapest in-stock offer
     assert len(page["variants"]) == 6
     colors = [o["value"] for o in page["variant_dims"][0]["options"]]
     assert colors == ["Charcoal", "Heather Grey", "Sandstone"]
@@ -55,24 +55,24 @@ def test_unknown_item_is_404(client):
 
 
 def test_cart_add_update_delete(client):
-    client.post("/cart/add", data={"asin": "B0KNDL0001", "seller_id": "AMZN", "qty": 2})
-    client.post("/cart/add", data={"asin": "B0KNDL0001", "seller_id": "AMZN", "qty": 1})
+    client.post("/cart/add", data={"asin": "B0KNDL0001", "seller_id": "RISH", "qty": 2})
+    client.post("/cart/add", data={"asin": "B0KNDL0001", "seller_id": "RISH", "qty": 1})
     html = client.get("/cart").get_data(as_text=True)
     assert "Subtotal (3 items)" in html
 
-    client.post("/cart/update", data={"asin": "B0KNDL0001", "seller_id": "AMZN", "qty": 5})
+    client.post("/cart/update", data={"asin": "B0KNDL0001", "seller_id": "RISH", "qty": 5})
     assert "Subtotal (5 items)" in client.get("/cart").get_data(as_text=True)
 
-    client.post("/cart/update", data={"asin": "B0KNDL0001", "seller_id": "AMZN", "qty": 5, "delete": 1})
+    client.post("/cart/update", data={"asin": "B0KNDL0001", "seller_id": "RISH", "qty": 5, "delete": 1})
     assert "Your Amazon Cart is empty" in client.get("/cart").get_data(as_text=True)
 
 
 def test_seller_update_changes_buy_box_and_bumps_version(client):
-    resp = client.post("/seller", data={"offer": "B0FTVS0001|GADG", "price": "999", "stock": "4"},
+    resp = client.post("/seller", data={"offer": "B0FTVS0001|RITIK", "price": "999", "stock": "4"},
                        follow_redirects=True)
     assert "version 2" in resp.get_data(as_text=True)
     page = db.get_item_page("B0FTVS0001")
-    assert page["buy_box"]["seller_id"] == "GADG"
+    assert page["buy_box"]["seller_id"] == "RITIK"
     assert page["item"]["min_price"] == 999
 
 

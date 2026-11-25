@@ -304,3 +304,168 @@ def cart_count(cart_id):
         ProjectionExpression="qty",
     )["Items"]
     return sum(int(r["qty"]) for r in rows)
+def _all_offer_rows():
+    """Fetch every offer record from DynamoDB."""
+    kwargs = {
+        "FilterExpression": "#kind = :offer",
+        "ExpressionAttributeNames": {"#kind": "kind"},
+        "ExpressionAttributeValues": {":offer": "OFFER"},
+    }
+
+    rows = []
+    while True:
+        response = table().scan(**kwargs)
+        rows.extend(response.get("Items", []))
+
+        if "LastEvaluatedKey" not in response:
+            break
+
+        kwargs["ExclusiveStartKey"] = response["LastEvaluatedKey"]
+
+    return rows
+
+
+def update_seller_details(old_seller_id, new_seller_id,
+                          seller_name, ships_from, delivery, condition):
+    """Update seller details across all offers, optionally changing seller ID."""
+
+    old_seller_id = old_seller_id.strip()
+    new_seller_id = new_seller_id.strip()
+    seller_name = seller_name.strip()
+    ships_from = ships_from.strip()
+    delivery = delivery.strip()
+    condition = condition.strip()
+
+    if not all([old_seller_id, new_seller_id, seller_name,
+                ships_from, delivery, condition]):
+        raise ValueError("All seller fields are required.")
+
+    rows = [
+        r for r in _all_offer_rows()
+        if r.get("seller_id") == old_seller_id
+    ]
+
+    if not rows:
+        raise ValueError(f"Seller {old_seller_id} has no existing offers.")
+
+    if old_seller_id != new_seller_id:
+        # Check for collisions before migrating any records.
+        for row in rows:
+            response = table().get_item(
+                Key={
+                    "pk": row["pk"],
+                    "sk": f"OFFER#{new_seller_id}"
+                }
+            )
+            if "Item" in response:
+                raise ValueError(
+                    f"Seller ID {new_seller_id} already has an offer "
+                    f"for product {row['asin']}."
+                )
+
+        # Copy each offer to its new key, then remove the old key.
+        for row in rows:
+            updated = dict(row)
+            updated["sk"] = f"OFFER#{new_seller_id}"
+            updated["seller_id"] = new_seller_id
+            updated["seller_name"] = seller_name
+            updated["ships_from"] = ships_from
+            updated["delivery"] = delivery
+            updated["condition"] = condition
+            updated["updated_at"] = _now()
+            updated["version"] = int(row.get("version", 1)) + 1
+
+            table().put_item(
+                Item=updated,
+                ConditionExpression="attribute_not_exists(pk)"
+            )
+
+            table().delete_item(
+                Key={"pk": row["pk"], "sk": row["sk"]}
+            )
+
+    else:
+        # Same ID: update the seller details in-place.
+        for row in rows:
+            table().update_item(
+                Key={"pk": row["pk"], "sk": row["sk"]},
+                UpdateExpression=(
+                    "SET seller_name = :name, ships_from = :ships, "
+                    "delivery = :delivery, #cond = :condition, "
+                    "updated_at = :now ADD version :one"
+                ),
+                ExpressionAttributeNames={"#cond": "condition"},
+                ExpressionAttributeValues={
+                    ":name": seller_name,
+                    ":ships": ships_from,
+                    ":delivery": delivery,
+                    ":condition": condition,
+                    ":now": _now(),
+                    ":one": 1,
+                },
+                ConditionExpression="attribute_exists(pk)"
+            )
+
+    return len(rows)
+
+
+def create_seller_offer(asin, seller_id, seller_name, ships_from,
+                        delivery, condition, price, stock):
+    """Create a new seller offer for an existing product."""
+
+    asin = asin.strip()
+    seller_id = seller_id.strip()
+    seller_name = seller_name.strip()
+    ships_from = ships_from.strip()
+    delivery = delivery.strip()
+    condition = condition.strip()
+
+    if not all([asin, seller_id, seller_name, ships_from,
+                delivery, condition]):
+        raise ValueError("All seller fields are required.")
+
+    try:
+        price = Decimal(str(price))
+        stock = int(stock)
+    except Exception:
+        raise ValueError("Enter a valid price and stock quantity.")
+
+    if not price.is_finite() or price <= 0 or stock < 0:
+        raise ValueError("Price must be positive and stock cannot be negative.")
+
+    page = get_item_page(asin)
+    if page is None:
+        raise ValueError("Selected product does not exist.")
+
+    key = {
+        "pk": f"ITEM#{asin}",
+        "sk": f"OFFER#{seller_id}"
+    }
+
+    try:
+        table().put_item(
+            Item={
+                **key,
+                "kind": "OFFER",
+                "asin": asin,
+                "seller_id": seller_id,
+                "seller_name": seller_name,
+                "ships_from": ships_from,
+                "delivery": delivery,
+                "condition": condition,
+                "price": price,
+                "list_price": page["item"].get("min_price") or price,
+                "stock": stock,
+                "version": 1,
+                "updated_at": _now(),
+            },
+            ConditionExpression="attribute_not_exists(pk)"
+        )
+    except ClientError as e:
+        if e.response["Error"]["Code"] == "ConditionalCheckFailedException":
+            raise ValueError(
+                f"Seller {seller_id} already has an offer for this product."
+            )
+        raise
+
+    _refresh_min_price(asin)

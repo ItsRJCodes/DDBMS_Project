@@ -1,38 +1,85 @@
 {% extends "base.html" %}
 {% block title %}Seller Central{% endblock %}
+
 {% block content %}
 <div class="seller-page">
-  <h1>Seller Central — update an offer</h1>
-  <p class="muted">This simulates the <b>Item Service</b> ingesting a price/stock update from a seller.
-    It runs a DynamoDB <code>UpdateItem</code> with <code>ConditionExpression: attribute_exists(pk)</code>
-    and increments a <code>version</code> counter.</p>
+
+  <h1>Seller Central — Seller Management</h1>
+  <p class="muted">
+    Manage seller information and update product offers stored in Amazon DynamoDB.
+  </p>
+
+  <h2>Update New Offers</h2>
 
   <form method="post" class="seller-form">
-    <label>Offer
+    <input type="hidden" name="action" value="update_offer">
+
+    <label>Product and Seller
       <select name="offer" required>
         {% for o in offers %}
         <option value="{{ o.asin }}|{{ o.seller_id }}">
-          {{ o.title }}{% if o.variant_label %} ({{ o.variant_label }}){% endif %} — {{ o.seller_name }} — {{ o.price|money }}, stock {{ o.stock }}
+          {{ o.title }} — {{ o.seller_name }} ({{ o.seller_id }})
         </option>
         {% endfor %}
       </select>
     </label>
-    <label>New price (₹) <input name="price" type="number" step="0.01" min="1" required></label>
-    <label>Stock <input name="stock" type="number" min="0" required></label>
-    <button class="btn btn-cart">Update offer</button>
+
+    <label>New Price (₹)
+      <input name="price" type="number" step="0.01" min="1" required>
+    </label>
+
+    <label>Stock
+      <input name="stock" type="number" min="0" required>
+    </label>
+
+    <button class="btn btn-cart">Update Offer</button>
   </form>
 
-  <h2>All offers</h2>
+  <hr>
+
+  
+  <hr>
+
+  <h2>Offers</h2>
+
   <table class="specs wide">
-    <tr><th>ASIN</th><th>Item</th><th>Seller</th><th>Price</th><th>Stock</th><th>Version</th><th>Updated</th></tr>
+    <tr>
+      <th>ASIN</th>
+      <th>Item</th>
+      <th>Seller ID</th>
+      <th>Seller</th>
+      <th>Ships From</th>
+      <th>Price</th>
+      <th>Stock</th>
+      <th>Version</th>
+      <th>Updated</th>
+    </tr>
+
     {% for o in offers %}
     <tr>
-      <td><a class="link" href="{{ url_for('product', asin=o.asin) }}"><code>{{ o.asin }}</code></a></td>
-      <td>{{ o.title }}{% if o.variant_label %} <span class="muted">({{ o.variant_label }})</span>{% endif %}</td>
-      <td>{{ o.seller_name }}</td><td>{{ o.price|money }}</td><td>{{ o.stock }}</td>
-      <td>{{ o.version }}</td><td class="small muted">{{ o.updated_at }}</td>
+      <td>
+        <a class="link" href="{{ url_for('product', asin=o.asin) }}">
+          <code>{{ o.asin }}</code>
+        </a>
+      </td>
+
+      <td>
+        {{ o.title }}
+        {% if o.variant_label %}
+          <span class="muted">({{ o.variant_label }})</span>
+        {% endif %}
+      </td>
+
+      <td>{{ o.seller_id }}</td>
+      <td>{{ o.seller_name }}</td>
+      <td>{{ o.ships_from }}</td>
+      <td>{{ o.price|money }}</td>
+      <td>{{ o.stock }}</td>
+      <td>{{ o.version }}</td>
+      <td class="small muted">{{ o.updated_at }}</td>
     </tr>
     {% endfor %}
   </table>
+
 </div>
 {% endblock %}

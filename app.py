@@ -86,18 +86,66 @@ def cart_update():
 @app.route("/seller", methods=["GET", "POST"])
 def seller():
     if request.method == "POST":
-        asin, seller_id = request.form["offer"].split("|")
+        action = request.form.get("action")
+
         try:
-            updated = db.update_offer(asin, seller_id, request.form["price"], request.form["stock"])
-            flash(
-                f"Offer updated in DynamoDB: {updated['seller_name']} → "
-                f"{money(updated['price'])}, stock {updated['stock']} (version {updated['version']})",
-                "success",
-            )
-        except ValueError as e:
+            if action == "update_offer":
+                asin, seller_id = request.form["offer"].split("|")
+                updated = db.update_offer(
+                    asin, seller_id,
+                    request.form["price"],
+                    request.form["stock"]
+                )
+                flash(
+                    f"Offer updated: {updated['seller_name']} — "
+                    f"{money(updated['price'])}, stock {updated['stock']}",
+                    "success"
+                )
+
+            elif action == "update_seller":
+                count = db.update_seller_details(
+                    request.form["old_seller_id"],
+                    request.form["new_seller_id"],
+                    request.form["seller_name"],
+                    request.form["ships_from"],
+                    request.form["delivery"],
+                    request.form["condition"]
+                )
+                flash(f"Seller details updated across {count} offers.", "success")
+
+            elif action == "add_seller":
+                db.create_seller_offer(
+                    request.form["asin"],
+                    request.form["seller_id"],
+                    request.form["seller_name"],
+                    request.form["ships_from"],
+                    request.form["delivery"],
+                    request.form["condition"],
+                    request.form["price"],
+                    request.form["stock"]
+                )
+                flash("New seller offer added successfully.", "success")
+
+            else:
+                flash("Invalid action.", "error")
+
+        except (ValueError, KeyError) as e:
             flash(str(e), "error")
+
         return redirect(url_for("seller"))
-    return render_template("seller.html", offers=db.list_all_offers())
+
+    offers = db.list_all_offers()
+    sellers = {}
+
+    for offer in offers:
+        sellers[offer["seller_id"]] = offer
+
+    return render_template(
+        "seller.html",
+        offers=offers,
+        sellers=sorted(sellers.values(), key=lambda s: s["seller_id"]),
+        products=db.list_items()
+    )
 
 
 @app.errorhandler(404)
